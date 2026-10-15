@@ -1,4 +1,5 @@
 import os
+from enum import StrEnum
 
 import requests
 from dotenv import load_dotenv
@@ -13,17 +14,24 @@ from space.errors import (
 load_dotenv()
 
 
+class Endpoints(StrEnum):
+    APOD_BASIC = "/wp-json/wp/v2/apod-basic"
+    FEED_APOD_BASIC = "/feed/apod-basic/"
+
+
 class ApiClient:
     URL = "https://science.nasa.gov"
+    PER_PAGE = 1
 
     def __init__(self):
         self.session = requests.Session()
 
         self.session.headers.update({"X-Api-Key": os.getenv("API_KEY", "")})
 
-    def get(self, endpoint: str, timeout: int = 10, **params):
+    def get(self, endpoint: str, date=None, timeout: int = 10, **params):
         try:
             url = self.URL + endpoint
+            url = url + f"/{date}" if date is not None else url
             response = self.session.get(url, params=params, timeout=timeout)
             response.raise_for_status()
             return response.json()

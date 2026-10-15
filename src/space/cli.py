@@ -1,5 +1,9 @@
 import typer
 
+from space.client import ApiClient, Endpoints
+from space.errors import ApiError
+from space.models import Apod
+from space.parser import parse_date
 
 app = typer.Typer()
 
@@ -10,12 +14,14 @@ def apod(
         None, "--date", help="Show APOD for one day. Format: YYYY-MM-DD"
     ),
     recent: int = typer.Option(
-        1, "--recent", help="Show the latest N entries(1 to 25). --recent <N>"
+        ApiClient.PER_PAGE,
+        "--recent",
+        help="Show the latest N entries(1 to 25). --recent <N>",
     ),
-    from_date: str = typer.Option(
+    date_from: str = typer.Option(
         None, "--from", help="Show entries from date. Format YYYY-MM-DD"
     ),
-    to_date: str = typer.Option(
+    date_to: str = typer.Option(
         None, "--to", help="Show entries to date. Format YYYY-MM-DD"
     ),
     timeout: int = typer.Option(
@@ -23,7 +29,27 @@ def apod(
     ),
     raw: bool = typer.Option(False, "--raw", help="Print the raw response JSON"),
 ):
-    pass
+    try:
+        params = {}
+        if date is not None:
+            date = parse_date(date)
+        if recent is not None:
+            params["per_page"] = recent
+        if date_from is not None:
+            params["date_from"] = parse_date(date_from)
+        if date_to is not None:
+            params["date_to"] = parse_date(date_to)
+
+        with ApiClient() as client:
+            response = client.get(
+                Endpoints.APOD_BASIC, date=date, timeout=timeout, params=params
+            )
+
+            apods = Apod.parse_json(response)
+            print(apods)
+
+    except ApiError as exc:
+        print(exc)
 
 
 @app.command()
