@@ -38,7 +38,7 @@ class ApiClient:
         except requests.Timeout as exc:
             raise ApiTimeoutError("Timeout occures, the server was too slow.") from exc
         except requests.ConnectionError as exc:
-            raise ApiConnectionError("No network or DNS problem.") from exc
+            raise ApiConnectionError("Network or DNS problem.") from exc
         except requests.HTTPError as exc:
             raise ApiHttpError("Invalid response status code.") from exc
         except ValueError as exc:

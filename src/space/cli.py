@@ -2,6 +2,7 @@ import typer
 
 from space.client import ApiClient, Endpoints
 from space.errors import ApiError
+from space.formatter import Formatter
 from space.models import Apod
 from space.parser import parse_date
 
@@ -29,6 +30,7 @@ def apod(
     ),
     raw: bool = typer.Option(False, "--raw", help="Print the raw response JSON"),
 ):
+    formatter = Formatter()
     try:
         params = {}
         if date is not None:
@@ -42,11 +44,14 @@ def apod(
 
         with ApiClient() as client:
             response = client.get(
-                Endpoints.APOD_BASIC, date=date, timeout=timeout, params=params
+                Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
             )
 
-            apods = Apod.parse_json(response)
-            print(apods)
+            if raw:
+                formatter.print_raw_json(response)
+            else:
+                apods = Apod.parse_json(response)
+                formatter.print_apods(apods)
 
     except ApiError as exc:
         print(exc)
