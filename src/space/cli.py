@@ -1,10 +1,10 @@
 import typer
 
 from space.client import ApiClient, Endpoints
-from space.errors import ApiError
+from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
-from space.models import Apod
-from space.parser import parse_date
+from space.models import Apod, NEOResponse
+from space.parser import parse_date, compute_neo_range, parse_neo_date
 
 app = typer.Typer()
 
@@ -43,7 +43,7 @@ def apod(
             params["date_to"] = parse_date(date_to)
 
         with ApiClient() as client:
-            response = client.get(
+            response = client.get_apods(
                 Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
             )
 
@@ -58,8 +58,48 @@ def apod(
 
 
 @app.command()
-def asteroids():
-    pass
+def asteroids(
+    days: int = typer.Option(
+        None, "--days", help="Number of days to look ahead. Limit is 7 days ahead"
+    ),
+    start: str = typer.Option(
+        None, "--start", help="Start of the date range. Format YYYY-MM-DD"
+    ),
+    end: str = typer.Option(
+        None,
+        "--end",
+        help="End of the date range.Limit 7 days after start date. Format YYYY-MM-DD",
+    ),
+    hazardous: bool = typer.Option(
+        False, "--hazardous-only", help="Show only potentially hazardous asteroids"
+    ),
+    limit: int = typer.Option(10, "--limit", help="Show only the N closest"),
+    timeout: int = typer.Option(
+        10, "--timeout", help="Seconds before the request is abandoned. Default: 10"
+    ),
+):
+    formatter = Formatter()
+    try:
+        params = {}
+        if days is not None and end is not None:
+            raise ApiValueError("'--days' and '--end' can not be used together.")
+        if days is not None:
+            start_date, end_date = compute_neo_range(days)
+            params["start_date"] = start_date
+            params["end_date"] = end_date
+
+        if start is not None and end is not None:
+            params["start_date"] = parse_neo_date(start)
+            params["end_date"] = parse_neo_date(end)
+
+        with ApiClient() as client:
+            response = client.get_asteroids(
+                Endpoints.NEO_FEED, timeout=timeout, **params
+            )
+            neo_response_obj = NEOResponse.parse_json(response)
+            print(neo_response_obj)
+    except ApiError as exc:
+        formatter.print_error(exc)
 
 
 if __name__ == "__main__":

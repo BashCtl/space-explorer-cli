@@ -23,7 +23,7 @@ def test_get_apod_return_json(monkeypatch):
         mock_get = Mock(return_value=mock_response)
         monkeypatch.setattr(client.session, "get", mock_get)
 
-        result = client.get("/feed-basic")
+        result = client.get_apods("/feed-basic")
 
         assert result == expected_data
 
@@ -42,7 +42,7 @@ def test_get_apod_raises_http_error(monkeypatch):
         monkeypatch.setattr(client.session, "get", Mock(return_value=mock_response))
 
         with pytest.raises(ApiHttpError, match="Invalid response status code."):
-            client.get("/feed-basic")
+            client.get_apods("/feed-basic")
         mock_response.json.assert_not_called()
 
 

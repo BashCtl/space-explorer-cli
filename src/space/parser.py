@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bs4 import BeautifulSoup
 
-from space.errors import ApiValueError
+from space.errors import ApiValueError, SpaceTypeError
 
 
 def html_to_string(html: str) -> str:
@@ -18,3 +18,26 @@ def parse_date(input_date: str) -> str:
         raise ApiValueError(
             f"Invalid date {input_date!r}. Expected format: YYYY-MM-DD"
         ) from exc
+
+
+def compute_neo_range(days: int):
+    try:
+        if days > 7:
+            raise ApiValueError("Days ahead parameter can not be bigger than 7.")
+        if days < 0:
+            raise ApiValueError("Days ahead parameter must be a postive integer")
+        start_date = datetime.now()
+        end_date = start_date + timedelta(days=days)
+        start_date = start_date.strftime("%Y-%m-%d")
+        end_date = end_date.strftime("%Y-%m-%d")
+        return start_date, end_date
+
+    except TypeError as exc:
+        raise SpaceTypeError("Days param must be and integer number.") from exc
+
+
+def parse_neo_date(date: str):
+    try:
+        return datetime.strptime(date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise ApiValueError("Invalid date format. Must be 'YYYY-MM-DD'.") from exc
