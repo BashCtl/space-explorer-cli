@@ -100,7 +100,7 @@ def asteroids(
             asteroids_list = parse_neo_feed(
                 neo_feed_res, hazardous=hazardous, limit=limit
             )
-            print(asteroids_list)
+            formatter.print_asteroids_table(asteroids_list)
     except ApiError as exc:
         formatter.print_error(exc)
 

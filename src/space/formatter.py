@@ -1,8 +1,9 @@
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+from rich.table import Table
 
-from space.models import Apod
+from space.models import Apod, Asteroid
 
 
 class Formatter:
@@ -50,6 +51,43 @@ class Formatter:
                     f"[link={apod.permalink} underline blue]{apod.permalink}[/link ]",
                 )
         self.console.rule(style="bold cyan")
+
+    def print_asteroids_table(self, asteroids: list[Asteroid]):
+        table = Table(title="Asteroids", style="cyan")
+
+        table.add_column("Name", style="green")
+        table.add_column("Orbiting Body", style="green")
+        table.add_column("Close Approach Date", style="green")
+        table.add_column("Relative Velocity km/h", style="green")
+        table.add_column("Miss Distance km", style="green")
+        table.add_column("Max Diameter km", style="green")
+        table.add_column("Potentially Hazardous", style="green")
+
+        for asteroid in asteroids:
+            name = asteroid.name
+            orbiting_body = asteroid.close_approach_data[0].orbiting_body
+            close_approach_date = asteroid.close_approach_data[0].close_approach_date
+            kilometers_per_hour = f"{asteroid.close_approach_data[0].relative_velocity.kilometers_per_hour:.2f}"
+            miss_distance_km = (
+                f"{asteroid.close_approach_data[0].miss_distance.kilometers:.2f}"
+            )
+            max_diameter_km = (
+                f"{asteroid.estimated_diameter.kilometers.estimated_diameter_max:.2f}"
+            )
+            is_hazardous = (
+                "[red]YES[/red]" if asteroid.is_potentially_hazardous_asteroid else "NO"
+            )
+
+            table.add_row(
+                name,
+                orbiting_body,
+                close_approach_date,
+                kilometers_per_hour,
+                miss_distance_km,
+                max_diameter_km,
+                is_hazardous,
+            )
+        self.console.print(table)
 
     def print_raw_json(self, json_data):
         self.console.print_json(data=json_data, indent=4)
