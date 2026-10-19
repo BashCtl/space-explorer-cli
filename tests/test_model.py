@@ -1,11 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from space.models import Apod
+from space.models import Apod, NEOResponse
 
 
 @pytest.fixture
-def valid_data():
+def apod_valid_data():
     return {
         "date": "2026-10-17",
         "post_id": 123,
@@ -23,8 +23,8 @@ def valid_data():
     }
 
 
-def test_parse_valid_data(valid_data):
-    result = Apod.parse_json([valid_data])
+def test_parse_apod_valid_data(apod_valid_data):
+    result = Apod.parse_json([apod_valid_data])
 
     assert len(result) == 1
     assert isinstance(result[0], Apod)
@@ -34,15 +34,15 @@ def test_parse_valid_data(valid_data):
     assert result[0].media_type == "image"
 
 
-def test_parse_multiple_records(valid_data):
-    result = Apod.parse_json([valid_data, valid_data.copy()])
+def test_parse_apod_multiple_records(apod_valid_data):
+    result = Apod.parse_json([apod_valid_data, apod_valid_data.copy()])
 
     assert len(result) == 2
     assert all(isinstance(item, Apod) for item in result)
 
 
-def test_explanation_html_is_converted(valid_data):
-    apod = Apod.parse_json([valid_data])[0]
+def test_apod_explanation_html_is_converted(apod_valid_data):
+    apod = Apod.parse_json([apod_valid_data])[0]
 
     assert "<p>" not in apod.explanation
     assert "<b>" not in apod.explanation
@@ -50,34 +50,56 @@ def test_explanation_html_is_converted(valid_data):
     assert "galaxy" in apod.explanation
 
 
-def test_parse_empty_list():
+def test_apod_parse_empty_list():
     assert Apod.parse_json([]) == []
 
 
-def test_missing_required_field(valid_data):
-    invalid_data = valid_data.copy()
+def test_apod_missing_required_field(apod_valid_data):
+    invalid_data = apod_valid_data.copy()
     del invalid_data["title"]
 
     with pytest.raises(ValidationError):
         Apod.parse_json([invalid_data])
 
 
-def test_invalid_post_id(valid_data):
-    invalid_data = valid_data.copy()
+def test_apod_invalid_post_id(apod_valid_data):
+    invalid_data = apod_valid_data.copy()
     invalid_data["post_id"] = "not-an-integer"
 
     with pytest.raises(ValidationError):
         Apod.parse_json([invalid_data])
 
 
-def test_invalid_input_type(valid_data):
+def test_apod_invalid_input_type(apod_valid_data):
     with pytest.raises(ValidationError):
-        Apod.parse_json(valid_data)
+        Apod.parse_json(apod_valid_data)
 
 
-def test_invalid_record_in_list(valid_data):
-    invalid_data = valid_data.copy()
+def test_apod_invalid_record_in_list(apod_valid_data):
+    invalid_data = apod_valid_data.copy()
     del invalid_data["url"]
 
     with pytest.raises(ValidationError):
-        Apod.parse_json([valid_data, invalid_data])
+        Apod.parse_json([apod_valid_data, invalid_data])
+
+
+def test_parse_asteroids_valid_data(asteroids_res):
+    result = NEOResponse.parse_json(asteroids_res)
+
+    assert isinstance(result, NEOResponse)
+    assert len(result.near_earth_objects) == 2
+    assert result.element_count == 11
+    assert next(iter(result.near_earth_objects.values()))[0].name == "(2009 UY17)"
+
+
+def test_asteroids_parse_empty_dict():
+    with pytest.raises(ValidationError):
+        NEOResponse.parse_json({})
+
+
+def test_asteroids_missing_required_field(asteroids_res):
+    invalid_data = asteroids_res.copy()
+    del invalid_data["element_count"]
+
+    with pytest.raises(ValidationError):
+        NEOResponse.parse_json([invalid_data])
