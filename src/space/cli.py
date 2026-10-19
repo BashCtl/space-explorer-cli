@@ -54,7 +54,7 @@ def apod(
                 formatter.print_apods(apods)
 
     except ApiError as exc:
-        print(exc)
+        formatter.print_error(exc)
 
 
 @app.command()

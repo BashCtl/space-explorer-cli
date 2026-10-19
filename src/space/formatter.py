@@ -13,8 +13,12 @@ class Formatter:
     def print_apods(self, apods: list[Apod]):
         for apod in apods:
             self.console.print()
-         
-            self.console.rule(f"[bold green]{apod.title}[/bold green]", align="left", style="bold cyan")
+
+            self.console.rule(
+                f"[bold green]{apod.title}[/bold green]",
+                align="left",
+                style="bold cyan",
+            )
             self.console.print(
                 f"[bold][cyan]Date:[/cyan] [green]{apod.date}[/green][/bold]"
             )
@@ -47,6 +51,8 @@ class Formatter:
                 )
         self.console.rule(style="bold cyan")
 
-
     def print_raw_json(self, json_data):
         self.console.print_json(data=json_data, indent=4)
+
+    def print_error(self, exception: Exception):
+        self.err_console.print(f"[red bold]Error: [/red bold] {exception!s}")
