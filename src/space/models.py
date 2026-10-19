@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, TypeAdapter
 
-from space.parser import html_to_string
+from space.utils import html_to_string
 
 HtmlText = Annotated[str, BeforeValidator(html_to_string)]
 

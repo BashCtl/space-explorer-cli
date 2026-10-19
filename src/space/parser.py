@@ -1,13 +1,7 @@
 from datetime import datetime, timedelta
 
-from bs4 import BeautifulSoup
-
 from space.errors import ApiValueError, SpaceTypeError
-
-
-def html_to_string(html: str) -> str:
-    soup = BeautifulSoup(html, "html.parser")
-    return soup.get_text(" ", strip=True)
+from space.models import Asteroid, NEOResponse
 
 
 def parse_date(input_date: str) -> str:
@@ -36,8 +30,22 @@ def compute_neo_range(days: int):
         raise SpaceTypeError("Days param must be and integer number.") from exc
 
 
-def parse_neo_date(date: str):
+def parse_neo_date(date: str) -> datetime:
     try:
         return datetime.strptime(date, "%Y-%m-%d")
     except ValueError as exc:
         raise ApiValueError("Invalid date format. Must be 'YYYY-MM-DD'.") from exc
+
+
+def parse_neo_feed(
+    neo_response: "NEOResponse", hazardous=False, limit=10
+) -> list[Asteroid]:
+    result: list[Asteroid] = []
+    for asteroids_list in neo_response.near_earth_objects.values():
+        result.extend(asteroids_list)
+
+    result.sort(key=lambda a: a.close_approach_data[0].miss_distance.kilometers)
+    if hazardous:
+        result = [asteroid for asteroid in result if asteroid.is_potentially_hazardous_asteroid]
+
+    return result[:limit]

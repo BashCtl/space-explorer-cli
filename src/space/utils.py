@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import requests
+from bs4 import BeautifulSoup
 
 from space.errors import ApiTimeoutError
 
@@ -17,3 +18,8 @@ def download_image(url, image_name):
             file.write(data)
     except requests.Timeout as exc:
         raise ApiTimeoutError("Timeout occures, the server was too slow.") from exc
+
+
+def html_to_string(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text(" ", strip=True)

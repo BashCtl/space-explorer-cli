@@ -4,7 +4,7 @@ from space.client import ApiClient, Endpoints
 from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
 from space.models import Apod, NEOResponse
-from space.parser import parse_date, compute_neo_range, parse_neo_date
+from space.parser import compute_neo_range, parse_date, parse_neo_date, parse_neo_feed
 
 app = typer.Typer()
 
@@ -96,8 +96,11 @@ def asteroids(
             response = client.get_asteroids(
                 Endpoints.NEO_FEED, timeout=timeout, **params
             )
-            neo_response_obj = NEOResponse.parse_json(response)
-            print(neo_response_obj)
+            neo_feed_res = NEOResponse.parse_json(response)
+            asteroids_list = parse_neo_feed(
+                neo_feed_res, hazardous=hazardous, limit=limit
+            )
+            print(asteroids_list)
     except ApiError as exc:
         formatter.print_error(exc)
 
