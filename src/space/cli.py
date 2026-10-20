@@ -55,6 +55,7 @@ def apod(
 
     except ApiError as exc:
         formatter.print_error(exc)
+        raise typer.Exit(1) from exc
 
 
 @app.command()
@@ -103,6 +104,7 @@ def asteroids(
             formatter.print_asteroids_table(asteroids_list)
     except ApiError as exc:
         formatter.print_error(exc)
+        raise typer.Exit(1) from exc
 
 
 if __name__ == "__main__":
