@@ -4,7 +4,13 @@ from space.client import ApiClient, Endpoints
 from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
 from space.models import Apod, NEOResponse
-from space.parser import compute_neo_range, parse_apod_date, parse_neo_date, parse_neo_feed
+from space.parser import (
+    compute_neo_range,
+    parse_apod_date,
+    parse_neo_date,
+    parse_neo_feed,
+)
+from space.plots import asteroids_plot
 
 app = typer.Typer()
 
@@ -75,6 +81,11 @@ def asteroids(
         False, "--hazardous-only", help="Show only potentially hazardous asteroids"
     ),
     limit: int = typer.Option(10, "--limit", help="Show only the N closest"),
+    plot: str = typer.Option(
+        None,
+        "--plot",
+        help="Generate asteroids plot distance(x) against diameter, and save to .png file. Usage --plot <filepath>",
+    ),
     timeout: int = typer.Option(
         10, "--timeout", help="Seconds before the request is abandoned. Default: 10"
     ),
@@ -102,6 +113,8 @@ def asteroids(
                 neo_feed_res, hazardous=hazardous, limit=limit
             )
             formatter.print_asteroids_table(asteroids_list)
+            if plot is not None:
+                asteroids_plot(asteroids_list, plot)
     except ApiError as exc:
         formatter.print_error(exc)
         raise typer.Exit(1) from exc
