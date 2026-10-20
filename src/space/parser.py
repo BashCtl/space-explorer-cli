@@ -4,7 +4,7 @@ from space.errors import ApiValueError, SpaceTypeError
 from space.models import Asteroid, NEOResponse
 
 
-def parse_date(input_date: str) -> str:
+def parse_apod_date(input_date: str) -> str:
     try:
         date_object = datetime.strptime(input_date, "%Y-%m-%d")
         return date_object.strftime("%y%m%d")
@@ -30,9 +30,9 @@ def compute_neo_range(days: int):
         raise SpaceTypeError("Days param must be and integer number.") from exc
 
 
-def parse_neo_date(date: str) -> datetime:
+def parse_neo_date(date: str) :
     try:
-        return datetime.strptime(date, "%Y-%m-%d")
+        return datetime.strptime(date, "%Y-%m-%d").date()
     except ValueError as exc:
         raise ApiValueError("Invalid date format. Must be 'YYYY-MM-DD'.") from exc
 

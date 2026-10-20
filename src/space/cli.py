@@ -4,7 +4,7 @@ from space.client import ApiClient, Endpoints
 from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
 from space.models import Apod, NEOResponse
-from space.parser import compute_neo_range, parse_date, parse_neo_date, parse_neo_feed
+from space.parser import compute_neo_range, parse_apod_date, parse_neo_date, parse_neo_feed
 
 app = typer.Typer()
 
@@ -34,13 +34,13 @@ def apod(
     try:
         params = {}
         if date is not None:
-            date = parse_date(date)
+            date = parse_apod_date(date)
         if recent is not None:
             params["per_page"] = recent
         if date_from is not None:
-            params["date_from"] = parse_date(date_from)
+            params["date_from"] = parse_apod_date(date_from)
         if date_to is not None:
-            params["date_to"] = parse_date(date_to)
+            params["date_to"] = parse_apod_date(date_to)
 
         with ApiClient() as client:
             response = client.get_apods(
