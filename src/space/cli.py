@@ -11,6 +11,7 @@ from space.parser import (
     parse_neo_feed,
 )
 from space.plots import asteroids_plot
+from space.utils import APOD_TTL, NEO_TTL, load_cache, save_cache
 
 app = typer.Typer()
 
@@ -34,6 +35,11 @@ def apod(
     timeout: int = typer.Option(
         10, "--timeout", help="Seconds before the request is abandoned. Default: 10"
     ),
+    no_cache: bool = typer.Option(
+        False,
+        "--no-cache",
+        help="Load data from api, otherwise if it present in cache it will load from it",
+    ),
     raw: bool = typer.Option(False, "--raw", help="Print the raw response JSON"),
 ):
     formatter = Formatter()
@@ -48,16 +54,20 @@ def apod(
         if date_to is not None:
             params["date_to"] = parse_apod_date(date_to)
 
-        with ApiClient() as client:
-            response = client.get_apods(
-                Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
-            )
+        if not no_cache:
+            response = load_cache(APOD_TTL, endpoint=Endpoints.APOD_BASIC, **params)
+        if no_cache or not response: # type: ignore
+            with ApiClient() as client:
+                response = client.get_apods(
+                    Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
+                )
+            save_cache(response_json=response, endpoint=Endpoints.APOD_BASIC, **params)
 
-            if raw:
-                formatter.print_raw_json(response)
-            else:
-                apods = Apod.parse_json(response)
-                formatter.print_apods(apods)
+        if raw:
+            formatter.print_raw_json(response)
+        else:
+            apods = Apod.parse_json(response)
+            formatter.print_apods(apods)
 
     except ApiError as exc:
         formatter.print_error(exc)
@@ -86,6 +96,11 @@ def asteroids(
         "--plot",
         help="Generate asteroids plot distance(x) against diameter, and save to .png file. Usage --plot <filepath>",
     ),
+    no_cache: bool = typer.Option(
+        False,
+        "--no-cache",
+        help="Load data from api, otherwise if it present in cache it will load from it",
+    ),
     timeout: int = typer.Option(
         10, "--timeout", help="Seconds before the request is abandoned. Default: 10"
     ),
@@ -104,17 +119,20 @@ def asteroids(
             params["start_date"] = parse_neo_date(start)
             params["end_date"] = parse_neo_date(end)
 
-        with ApiClient() as client:
-            response = client.get_asteroids(
-                Endpoints.NEO_FEED, timeout=timeout, **params
-            )
-            neo_feed_res = NEOResponse.parse_json(response)
-            asteroids_list = parse_neo_feed(
-                neo_feed_res, hazardous=hazardous, limit=limit
-            )
-            formatter.print_asteroids_table(asteroids_list)
-            if plot is not None:
-                asteroids_plot(asteroids_list, plot)
+        if not no_cache:
+            response = load_cache(NEO_TTL, endpoint=Endpoints.NEO_FEED, **params)
+        if no_cache or not response:
+            with ApiClient() as client:
+                response = client.get_asteroids(
+                    Endpoints.NEO_FEED, timeout=timeout, **params
+                )
+            save_cache(response_json=response, endpoint=Endpoints.NEO_FEED, **params)
+
+        neo_feed_res = NEOResponse.parse_json(response)
+        asteroids_list = parse_neo_feed(neo_feed_res, hazardous=hazardous, limit=limit)
+        formatter.print_asteroids_table(asteroids_list)
+        if plot is not None:
+            asteroids_plot(asteroids_list, plot)
     except ApiError as exc:
         formatter.print_error(exc)
         raise typer.Exit(1) from exc

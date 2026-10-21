@@ -32,7 +32,7 @@ def compute_neo_range(days: int):
 
 def parse_neo_date(date: str) :
     try:
-        return datetime.strptime(date, "%Y-%m-%d").date()
+        return datetime.strptime(date, "%Y-%m-%d").date().isoformat()
     except ValueError as exc:
         raise ApiValueError("Invalid date format. Must be 'YYYY-MM-DD'.") from exc
 
