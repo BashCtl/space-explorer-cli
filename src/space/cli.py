@@ -1,6 +1,3 @@
-from datetime import date
-from turtle import st
-
 import typer
 
 from space.cache import APOD_TTL, NEO_TTL, load_cache, save_cache

@@ -1,7 +1,6 @@
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
@@ -10,7 +9,7 @@ from space.formatter import Formatter
 
 @pytest.fixture
 def formatter():
-    with patch("space.formatter.Console") as mock_console:
+    with patch("space.formatter.Console"):
         instance = Formatter()
         instance.console = MagicMock()
         instance.err_console = MagicMock()

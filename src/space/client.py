@@ -20,7 +20,6 @@ class Endpoints(StrEnum):
     NEO_FEED = "/feed"
 
 
-
 class ApiClient:
     APOD_URL = "https://science.nasa.gov"
     NEO_URL = "https://api.nasa.gov/neo/rest/v1"
@@ -47,11 +46,10 @@ class ApiClient:
         except ValueError as exc:
             raise ApiValueError("Response body is not a valid JSON.") from exc
 
-
-    def get_asteroids(self, endpoint: str,timeout: int = 10, **params):
+    def get_asteroids(self, endpoint: str, timeout: int = 10, **params):
         try:
             url = self.NEO_URL + endpoint
-            
+
             response = self.session.get(url, params=params, timeout=timeout)
             response.raise_for_status()
             return response.json()

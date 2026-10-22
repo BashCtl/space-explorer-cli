@@ -23,6 +23,5 @@ def asteroids_plot(asteroids: list[Asteroid], filepath):
             plt.scatter(distance, diameter, c="red")
         else:
             plt.scatter(distance, diameter, c="blue")
-    
+
     plt.savefig(filepath)
-   

@@ -1,11 +1,9 @@
 from datetime import datetime
-from unittest import result
 from unittest.mock import MagicMock
 
 import pytest
 
 from space.errors import ApiValueError, SpaceTypeError
-from space.models import NEOResponse
 from space.parser import (
     compute_neo_range,
     parse_apod_date,

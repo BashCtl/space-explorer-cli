@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
-from space.models import NEOResponse
+
 import pytest
+
+from space.models import NEOResponse
 
 TEST_DATA = Path(__file__).parent / "data"
 

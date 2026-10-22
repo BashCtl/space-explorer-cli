@@ -12,6 +12,7 @@ wheels/
 # Local dir, files
 .playground
 .cache
+test_report.html
 
 # Environment
 .env
