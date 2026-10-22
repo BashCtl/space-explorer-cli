@@ -6,14 +6,15 @@ from typer.testing import CliRunner
 from space.cli import app
 from space.client import Endpoints
 
-runner = CliRunner()
+runner = CliRunner(
+    env={"NO_COLOR": "1", "TERM": "dumb", "COLUMNS": "200"},
+)
 
 
 def invoke(*args):
     return runner.invoke(
         app,
-        [*args],
-        env={"NO_COLOR": "1", "TERM": "dumb", "COLUMNS": "200"},
+        list(args),
     )
 
 
