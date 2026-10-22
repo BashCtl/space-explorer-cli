@@ -10,7 +10,11 @@ runner = CliRunner()
 
 
 def invoke(*args):
-    return runner.invoke(app, [*args], color=False)
+    return runner.invoke(
+        app,
+        [*args],
+        env={"NO_COLOR": "1", "TERM": "dumb", "COLUMNS": "200"},
+    )
 
 
 def test_apod_help():
