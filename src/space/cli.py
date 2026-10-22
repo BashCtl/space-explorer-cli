@@ -1,5 +1,6 @@
 import typer
 
+from space.cache import APOD_TTL, NEO_TTL, load_cache, save_cache
 from space.client import ApiClient, Endpoints
 from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
@@ -11,7 +12,6 @@ from space.parser import (
     parse_neo_feed,
 )
 from space.plots import asteroids_plot
-from space.utils import APOD_TTL, NEO_TTL, load_cache, save_cache
 
 app = typer.Typer()
 
@@ -56,7 +56,7 @@ def apod(
 
         if not no_cache:
             response = load_cache(APOD_TTL, endpoint=Endpoints.APOD_BASIC, **params)
-        if no_cache or not response: # type: ignore
+        if no_cache or not response:  # type: ignore
             with ApiClient() as client:
                 response = client.get_apods(
                     Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
@@ -126,6 +126,7 @@ def asteroids(
                 response = client.get_asteroids(
                     Endpoints.NEO_FEED, timeout=timeout, **params
                 )
+
             save_cache(response_json=response, endpoint=Endpoints.NEO_FEED, **params)
 
         neo_feed_res = NEOResponse.parse_json(response)

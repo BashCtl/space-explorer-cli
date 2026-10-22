@@ -25,7 +25,7 @@ class Formatter:
             )
             self.console.print(
                 Panel(
-                    Text(apod.explanation.removeprefix("Explanation:")),
+                    Text(apod.explanation.removeprefix("Explanation:").strip()),
                     title="[bold cyan]Explanation:[/bold cyan]",
                     border_style="blue",
                     expand=False,
