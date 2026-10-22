@@ -1,3 +1,5 @@
+from datetime import date
+
 import typer
 
 from space.cache import APOD_TTL, NEO_TTL, load_cache, save_cache
@@ -54,14 +56,15 @@ def apod(
         if date_to is not None:
             params["date_to"] = parse_apod_date(date_to)
 
+        cache_params = {"endpoint": Endpoints.APOD_BASIC, "date": date, **params}
         if not no_cache:
-            response = load_cache(APOD_TTL, endpoint=Endpoints.APOD_BASIC, **params)
+            response = load_cache(APOD_TTL, **cache_params)
         if no_cache or not response:  # type: ignore
             with ApiClient() as client:
                 response = client.get_apods(
                     Endpoints.APOD_BASIC, date=date, timeout=timeout, **params
                 )
-            save_cache(response_json=response, endpoint=Endpoints.APOD_BASIC, **params)
+            save_cache(response_json=response, **cache_params)
 
         if raw:
             formatter.print_raw_json(response)
@@ -108,16 +111,33 @@ def asteroids(
     formatter = Formatter()
     try:
         params = {}
-        if days is not None and end is not None:
-            raise ApiValueError("'--days' and '--end' can not be used together.")
+        has_start = start is not None
+        has_end = end is not None
+
         if days is not None:
+            if has_start or has_end:
+                raise ApiValueError(
+                    "'--days' cannot be combined with '--start' or '--end'."
+                )
             start_date, end_date = compute_neo_range(days)
             params["start_date"] = start_date
             params["end_date"] = end_date
+        elif has_start or has_end:
+            if not has_start or not has_end:
+                raise ApiValueError("'--start' and '--end' must be provided together.")
 
-        if start is not None and end is not None:
-            params["start_date"] = parse_neo_date(start)
-            params["end_date"] = parse_neo_date(end)
+            start_date = parse_neo_date(start)
+            end_date = parse_neo_date(end)
+            date_span = (
+                date.fromisoformat(end_date) - date.fromisoformat(start_date)
+            ).days
+            if date_span < 0:
+                raise ApiValueError("'--start' must be on or before '--end'.")
+            if date_span > 7:
+                raise ApiValueError("The date range cannot be longer than 7 days.")
+
+            params["start_date"] = start_date
+            params["end_date"] = end_date
 
         if not no_cache:
             response = load_cache(NEO_TTL, endpoint=Endpoints.NEO_FEED, **params)
