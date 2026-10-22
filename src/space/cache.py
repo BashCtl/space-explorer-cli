@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -20,39 +22,73 @@ def load_all_cache() -> dict:
 
     try:
         with CACHE_FILE.open("r", encoding="utf-8") as file:
-            return json.load(file)
+            data = json.load(file)
     except json.JSONDecodeError as exc:
-        raise SpaceJSONDecodeError("Invalid json file") from exc
+        raise SpaceJSONDecodeError("Invalid cache JSON file") from exc
+
+    if not isinstance(data, dict):
+        raise SpaceJSONDecodeError("Cache JSON root must be an object")
+    return data
 
 
 def save_cache(response_json, **params) -> None:
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_all_cache()
+    try:
+        data = load_all_cache()
+    except SpaceJSONDecodeError:
+        data = {}
+
     data[_cache_key(params)] = {
         "created_at": datetime.now(UTC).isoformat(),
         "data": response_json,
     }
 
-    with CACHE_FILE.open("w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2, ensure_ascii=False)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=CACHE_FILE.parent,
+            prefix=f".{CACHE_FILE.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as file:
+            temporary_path = Path(file.name)
+            json.dump(data, file, indent=2, ensure_ascii=False)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary_path, CACHE_FILE)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def load_cache(ttl, **params) -> dict[Any, Any]:
-    data = load_all_cache()
-    cached_response = data.get(_cache_key(params), {})
-    if not cached_response:
+    try:
+        data = load_all_cache()
+    except SpaceJSONDecodeError:
         return {}
-    created_at = cached_response["created_at"]
-    if not is_cache_valid(created_at, ttl):
+
+    cached_response = data.get(_cache_key(params))
+    if not isinstance(cached_response, dict):
         return {}
-    return cached_response.get("data")
+
+    created_at = cached_response.get("created_at")
+    if not isinstance(created_at, str) or "data" not in cached_response:
+        return {}
+    try:
+        if not is_cache_valid(created_at, ttl):
+            return {}
+    except ApiValueError:
+        return {}
+    return cached_response["data"]
 
 
 def is_cache_valid(created_at, ttl):
     try:
         timestamp = datetime.fromisoformat(created_at)
         age = datetime.now(UTC) - timestamp
-        return age < ttl
-    except ValueError as exc:
+        return timedelta(0) <= age < ttl
+    except (TypeError, ValueError) as exc:
         raise ApiValueError("Invalid 'created_at' timestamp") from exc
