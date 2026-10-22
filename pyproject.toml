@@ -1,7 +1,7 @@
 [project]
 name = "space"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Python CLI that turns NASA's public APIs into a daily space briefing"
 readme = "README.md"
 authors = [
     { name = "BashCtl" }
