@@ -1,4 +1,5 @@
 from datetime import date
+from turtle import st
 
 import typer
 
@@ -8,6 +9,7 @@ from space.errors import ApiError, ApiValueError
 from space.formatter import Formatter
 from space.models import Apod, NEOResponse
 from space.parser import (
+    asteroids_days_span,
     compute_neo_range,
     parse_apod_date,
     parse_neo_date,
@@ -46,6 +48,11 @@ def apod(
 ):
     formatter = Formatter()
     try:
+        if recent is not None and not 1 <= recent <= 25:
+            raise ApiValueError("'--recent' must be between 1 and 25.")
+        if timeout <= 0:
+            raise ApiValueError("'--timeout' must be a positive number of seconds.")
+
         params = {}
         if date is not None:
             date = parse_apod_date(date)
@@ -110,6 +117,11 @@ def asteroids(
 ):
     formatter = Formatter()
     try:
+        if limit < 0:
+            raise ApiValueError("'--limit' cannot be negative.")
+        if timeout <= 0:
+            raise ApiValueError("'--timeout' must be a positive number of seconds.")
+
         params = {}
         has_start = start is not None
         has_end = end is not None
@@ -128,9 +140,7 @@ def asteroids(
 
             start_date = parse_neo_date(start)
             end_date = parse_neo_date(end)
-            date_span = (
-                date.fromisoformat(end_date) - date.fromisoformat(start_date)
-            ).days
+            date_span = asteroids_days_span(start_date, end_date)
             if date_span < 0:
                 raise ApiValueError("'--start' must be on or before '--end'.")
             if date_span > 7:

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from space.errors import ApiValueError, SpaceTypeError
 from space.models import Asteroid, NEOResponse
@@ -15,22 +15,20 @@ def parse_apod_date(input_date: str) -> str:
 
 
 def compute_neo_range(days: int):
-    try:
-        if days > 7:
-            raise ApiValueError("Days ahead parameter can not be bigger than 7.")
-        if days < 0:
-            raise ApiValueError("Days ahead parameter must be a postive integer")
-        start_date = datetime.now()
-        end_date = start_date + timedelta(days=days)
-        start_date = start_date.strftime("%Y-%m-%d")
-        end_date = end_date.strftime("%Y-%m-%d")
-        return start_date, end_date
+    if type(days) is not int:
+        error = TypeError("days must be an integer")
+        raise SpaceTypeError("Days param must be and integer number.") from error
+    if days > 7:
+        raise ApiValueError("Days ahead parameter can not be bigger than 7.")
+    if days < 0:
+        raise ApiValueError("Days ahead parameter must be a postive integer")
 
-    except TypeError as exc:
-        raise SpaceTypeError("Days param must be and integer number.") from exc
+    start_date = datetime.now()
+    end_date = start_date + timedelta(days=days)
+    return start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
 
 
-def parse_neo_date(date: str) :
+def parse_neo_date(date: str):
     try:
         return datetime.strptime(date, "%Y-%m-%d").date().isoformat()
     except ValueError as exc:
@@ -46,6 +44,14 @@ def parse_neo_feed(
 
     result.sort(key=lambda a: a.close_approach_data[0].miss_distance.kilometers)
     if hazardous:
-        result = [asteroid for asteroid in result if asteroid.is_potentially_hazardous_asteroid]
+        result = [
+            asteroid
+            for asteroid in result
+            if asteroid.is_potentially_hazardous_asteroid
+        ]
 
     return result[:limit]
+
+
+def asteroids_days_span(start_date, end_date):
+    return (date.fromisoformat(end_date) - date.fromisoformat(start_date)).days
